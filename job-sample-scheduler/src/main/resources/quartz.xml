@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd  
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<context:property-placeholder location="classpath:executor.properties" />
+
+	<bean id="firstTask"
+		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="com.zh.job.scheduler.RemoteQuartzJobBean" />
+		<property name="jobDataMap">
+			<map>
+				<entry key="executorBean" value-ref="firstExecutor" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="firstExecutor" class="com.zh.job.scheduler.ExecutorBean">
+		<constructor-arg name="executorName" value="firstExecutor"></constructor-arg>
+		<constructor-arg name="discoveryAddress" value="${discovery_address}"></constructor-arg>
+	</bean>
+
+	<bean id="firstCronTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="firstTask" />
+		<property name="cronExpression" value="0/5 * * ? * *" />
+		<property name="group" value="firstGroup"></property>
+	</bean>
+
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="com.mysql.jdbc.Driver" />
+		<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/quartz" />
+		<property name="user" value="root" />
+		<property name="password" value="root" />
+	</bean>
+
+	<bean id="scheduler"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="schedulerName" value="myScheduler"></property>
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:quartz.properties" />
+		<property name="triggers">
+			<list>
+				<ref bean="firstCronTrigger" />
+			</list>
+		</property>
+	</bean>
+
+</beans>
